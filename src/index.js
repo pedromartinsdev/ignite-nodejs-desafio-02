@@ -24,25 +24,37 @@ function checksExistsUserAccount(request, response, next) {
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  const { user } = request.users;
+  const { user } = request;
+
+  if ((user.pro === false && user.todos.length < 10) || user.pro === true) {
+    return next();
+  }
+
+  return response.status(403);
 }
 
 function checksTodoExists(request, response, next) {
   const { username } = request.headers;
   const { id } = request.params;
 
-  user = users.find((user) => user.username === username);
-  todo = user.todos.find((todos) => user.todos.id === id);
+  const user = users.find((user) => user.username === username)
 
-  if (!user) {
-    return response.status(404);
+  if(!user) {
+    return response.status(404).json({ error: 'Usuário não encontrado' });
   }
-  if (validate(id) == false) {
-    return response.status(400);
+
+  if(!validate(id)) {
+    return response.status(400).json({ error: 'Não é um UUID' });
   }
-  if (!todo) {
-    return response.status(404);
+
+  const todo = user.todos.find((todo) => todo.id === id);
+
+  if(!todo) {
+    return response.status(404).json({ error: "Todo não encontrado" });
   }
+
+  request.todo = todo;
+  request.user = user;
 
   return next();
 }
